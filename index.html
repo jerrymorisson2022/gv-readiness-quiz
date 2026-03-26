@@ -6,23 +6,36 @@
     <title>Тест готовності до завершення ГВ</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; color: #333; }
-        .question { margin-bottom: 20px; }
-        .btn { display: block; width: 100%; padding: 10px; margin: 10px 0; background: #0088cc; color: white; border: none; border-radius: 8px; font-size: 16px; }
-        .result { display: none; text-align: center; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; color: #333; background-color: #f5f5f5; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .question-num { color: #888; font-size: 14px; margin-bottom: 10px; }
+        .question-text { font-size: 18px; font-weight: 600; margin-bottom: 15px; line-height: 1.4; }
+        .hint { font-size: 14px; color: #666; margin-bottom: 20px; font-style: italic; }
+        .btn { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #0088cc; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .btn:active { background: #0077b5; }
+        .btn-secondary { background: #e0e0e0; color: #333; }
+        .result { display: none; }
+        .score-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
-    <div id="quiz">
-        <h2 id="qTitle">Питання 1</h2>
-        <div id="qText"></div>
-        <button class="btn" onclick="nextQuestion(1)">Так</button>
-        <button class="btn" onclick="nextQuestion(0)">Ні</button>
+    <div id="quiz" class="card">
+        <div class="question-num" id="qNum">Питання 1 з 5</div>
+        <div class="question-text" id="qText">Завантаження...</div>
+        <div class="hint" id="qHint"></div>
+        <button class="btn" onclick="nextQuestion(5)">Так (5/5)</button>
+        <button class="btn" onclick="nextQuestion(4)">Майже (4/5)</button>
+        <button class="btn" onclick="nextQuestion(3)">Частково (3/5)</button>
+        <button class="btn" onclick="nextQuestion(2)">Рідко (2/5)</button>
+        <button class="btn" onclick="nextQuestion(1)">Ні (1/5)</button>
     </div>
-    <div id="result" class="result">
-        <h2>Ваш результат</h2>
-        <p id="resText"></p>
-        <button class="btn" onclick="tg.close()">Закрити</button>
+
+    <div id="result" class="card result">
+        <h2 style="text-align:center">Ваш результат</h2>
+        <p id="resScore" style="text-align:center; font-size: 24px; font-weight: bold; color: #0088cc;"></p>
+        <p id="resText" style="line-height: 1.5; margin: 20px 0;"></p>
+        <div id="breakdown"></div>
+        <button class="btn" onclick="tg.close()">Закрити тест</button>
     </div>
 
     <script>
@@ -30,22 +43,45 @@
         tg.expand();
         
         const questions = [
-            "Дитині вже є 1.5 - 2 роки?",
-            "Дитина може заснути без грудей (хоча б іноді)?",
-            "Дитина їсть звичайну їжу з апетитом?",
-            "Ви відчуваєте психологічну готовність завершити?"
+            {
+                label: "Психологічна готовність мами",
+                q: "Чи готові ви психологічно до завершення?",
+                hint: "Чи немає у вас страху втратити зв'язок з дитиною або почуття провини?"
+            },
+            {
+                label: "Фізична готовність мами",
+                q: "Як ваше тіло реагує на довгі перерви?",
+                hint: "Чи немає сильного наповнення або дискомфорту, якщо годування пропускається?"
+            },
+            {
+                label: "Вік та фізіологія дитини",
+                q: "Чи готова дитина за віком?",
+                hint: "ВООЗ рекомендує до 2 років, але ми дивимось на зрілість нервової системи."
+            },
+            {
+                label: "Харчовий інтерес",
+                q: "Як дитина їсть звичайну їжу?",
+                hint: "Чи є ГВ лише доповненням, а не основним джерелом калорій вдень?"
+            },
+            {
+                label: "Навички засинання",
+                q: "Чи може дитина заснути без грудей?",
+                hint: "З татом, бабусею або самостійно, не використовуючи груди як єдиний спосіб розслаблення."
+            }
         ];
         
         let currentQ = 0;
-        let score = 0;
+        let scores = [];
         
         function showQ() {
-            document.getElementById('qTitle').innerText = `Питання ${currentQ + 1} з ${questions.length}`;
-            document.getElementById('qText').innerText = questions[currentQ];
+            const q = questions[currentQ];
+            document.getElementById('qNum').innerText = `Питання ${currentQ + 1} з ${questions.length} • ${q.label}`;
+            document.getElementById('qText').innerText = q.q;
+            document.getElementById('qHint').innerText = q.hint;
         }
         
         function nextQuestion(val) {
-            score += val;
+            scores.push(val);
             currentQ++;
             if (currentQ < questions.length) {
                 showQ();
@@ -57,8 +93,29 @@
         function showResult() {
             document.getElementById('quiz').style.display = 'none';
             document.getElementById('result').style.display = 'block';
-            let res = score >= 3 ? "Ви та малюк майже готові! Можна починати м'яке скорочення." : "Схоже, варто ще трохи почекати або діяти дуже поступово.";
+            
+            const total = scores.reduce((a, b) => a + b, 0);
+            const maxScore = questions.length * 5;
+            
+            document.getElementById('resScore').innerText = `${total} / ${maxScore}`;
+            
+            let res = "";
+            if (total >= 21) {
+                res = "Ви та малюк максимально готові! Можна починати м'яке завершення, прибираючи найменш важливі годування.";
+            } else if (total >= 13) {
+                res = "Ви на правильному шляху, але є моменти, які потребують підготовки. Зверніть увагу на пункти з низьким балом.";
+            } else {
+                res = "Схоже, зараз не найкращий час для різких змін. Спробуйте попрацювати над харчовим інтересом або розділенням сну та годування.";
+            }
             document.getElementById('resText').innerText = res;
+            
+            let html = "<h3>Деталізація:</h3>";
+            questions.forEach((q, i) => {
+                const filled = "★".repeat(scores[i]);
+                const empty = "☆".repeat(5 - scores[i]);
+                html += `<div class="score-row"><span>${q.label}</span><span>${filled}${empty}</span></div>`;
+            });
+            document.getElementById('breakdown').innerHTML = html;
         }
         
         showQ();
