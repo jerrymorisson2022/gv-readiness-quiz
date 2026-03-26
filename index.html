@@ -6,119 +6,122 @@
     <title>Тест готовності до завершення ГВ</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; color: #333; background-color: #f5f5f5; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .question-num { color: #888; font-size: 14px; margin-bottom: 10px; }
-        .question-text { font-size: 18px; font-weight: 600; margin-bottom: 15px; line-height: 1.4; }
-        .hint { font-size: 14px; color: #666; margin-bottom: 20px; font-style: italic; }
-        .btn { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #0088cc; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-        .btn:active { background: #0077b5; }
-        .btn-secondary { background: #e0e0e0; color: #333; }
-        .result { display: none; }
-        .score-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 15px; color: #333; background-color: #f0f2f5; line-height: 1.5; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 15px; }
+        .tag { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        .tag-mama { background: #ffe4e6; color: #e11d48; }
+        .tag-child { background: #dcfce7; color: #166534; }
+        .q-num { color: #64748b; font-size: 13px; margin-bottom: 5px; }
+        .q-text { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 12px; }
+        .hint-box { background: #f8fafc; border-left: 4px solid #3b82f6; padding: 12px; font-size: 14px; color: #475569; margin-bottom: 20px; border-radius: 0 8px 8px 0; }
+        .btn-group { display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .btn { padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        .btn-val { background: #ffffff; border: 2px solid #e2e8f0; color: #475569; }
+        .btn-val:active { background: #f1f5f9; transform: scale(0.98); }
+        .btn-primary { background: #0088cc; color: white; justify-content: center; margin-top: 10px; width: 100%; }
+        .result-screen { display: none; }
+        .score-badge { display: inline-block; padding: 10px 20px; background: #0088cc; color: white; border-radius: 15px; font-size: 24px; font-weight: 800; margin: 15px 0; }
+        .category-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .stars { color: #fbbf24; font-size: 18px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
-    <div id="quiz" class="card">
-        <div class="question-num" id="qNum">Питання 1 з 5</div>
-        <div class="question-text" id="qText">Завантаження...</div>
-        <div class="hint" id="qHint"></div>
-        <button class="btn" onclick="nextQuestion(5)">Так (5/5)</button>
-        <button class="btn" onclick="nextQuestion(4)">Майже (4/5)</button>
-        <button class="btn" onclick="nextQuestion(3)">Частково (3/5)</button>
-        <button class="btn" onclick="nextQuestion(2)">Рідко (2/5)</button>
-        <button class="btn" onclick="nextQuestion(1)">Ні (1/5)</button>
+    <div id="quiz-container">
+        <div class="card" id="qCard">
+            <div id="qTag" class="tag">Мамин блок</div>
+            <div id="qProgress" class="q-num">Питання 1 з 10</div>
+            <div id="qText" class="q-text">Завантаження...</div>
+            <div id="qHint" class="hint-box"></div>
+            <div class="btn-group">
+                <button class="btn btn-val" onclick="next(5)"><span>Повна готовність</span> <span>5</span></button>
+                <button class="btn btn-val" onclick="next(4)"><span>Майже готові</span> <span>4</span></button>
+                <button class="btn btn-val" onclick="next(3)"><span>Частково / 50-50</span> <span>3</span></button>
+                <button class="btn btn-val" onclick="next(2)"><span>Рідко / Складно</span> <span>2</span></button>
+                <button class="btn btn-val" onclick="next(1)"><span>Зовсім не готові</span> <span>1</span></button>
+            </div>
+        </div>
     </div>
 
-    <div id="result" class="card result">
-        <h2 style="text-align:center">Ваш результат</h2>
-        <p id="resScore" style="text-align:center; font-size: 24px; font-weight: bold; color: #0088cc;"></p>
-        <p id="resText" style="line-height: 1.5; margin: 20px 0;"></p>
-        <div id="breakdown"></div>
-        <button class="btn" onclick="tg.close()">Закрити тест</button>
+    <div id="result-screen" class="result-screen">
+        <div class="card" style="text-align: center;">
+            <h2 style="margin:0">Ваш результат</h2>
+            <div id="totalScore" class="score-badge">0 / 50</div>
+            <p id="mainAdvice" style="font-weight: 600; color: #1e293b;"></p>
+        </div>
+        <div class="card">
+            <h3 style="margin-top:0">Деталізація по блоках:</h3>
+            <div id="breakdown"></div>
+            <button class="btn btn-primary" onclick="window.Telegram.WebApp.close()">Закрити</button>
+        </div>
     </div>
 
     <script>
-        let tg = window.Telegram.WebApp;
+        const tg = window.Telegram.WebApp;
         tg.expand();
-        
+
         const questions = [
-            {
-                label: "Психологічна готовність мами",
-                q: "Чи готові ви психологічно до завершення?",
-                hint: "Чи немає у вас страху втратити зв'язок з дитиною або почуття провини?"
-            },
-            {
-                label: "Фізична готовність мами",
-                q: "Як ваше тіло реагує на довгі перерви?",
-                hint: "Чи немає сильного наповнення або дискомфорту, якщо годування пропускається?"
-            },
-            {
-                label: "Вік та фізіологія дитини",
-                q: "Чи готова дитина за віком?",
-                hint: "ВООЗ рекомендує до 2 років, але ми дивимось на зрілість нервової системи."
-            },
-            {
-                label: "Харчовий інтерес",
-                q: "Як дитина їсть звичайну їжу?",
-                hint: "Чи є ГВ лише доповненням, а не основним джерелом калорій вдень?"
-            },
-            {
-                label: "Навички засинання",
-                q: "Чи може дитина заснути без грудей?",
-                hint: "З татом, бабусею або самостійно, не використовуючи груди як єдиний спосіб розслаблення."
-            }
+            // Блок Мами
+            { block: 'Мама', type: 'mama', q: "Ресурс: чи є у вас внутрішній запас, щоб проходити процес змін без роздратування?", hint: "Якщо ви ледве закриваєте власні базові потреби — завершення краще відкласти. З порожньої чашки не наллєш." },
+            { block: 'Мама', type: 'mama', q: "Розуміння процесу: чи знаєте ви, з чого починати і як реагувати на протест?", hint: "Без стратегії легко зробити різкий крок і злякатися. Спершу сформуйте план дій." },
+            { block: 'Мама', type: 'mama', q: "Готовність до змін: чи є у вас 2–3 працюючі альтернативи втіхи без грудей?", hint: "Ідеальних умов не буде, але варто заздалегідь напрацювати способи заспокоєння." },
+            { block: 'Мама', type: 'mama', q: "Моральна готовність: що ви відчуваєте, уявляючи останнє прикладання?", hint: "Якщо є сильний внутрішній спротив або провина — дайте собі час. Це нова форма близькості." },
+            { block: 'Мама', type: 'mama', q: "Фізична готовність грудей: чи наповнюються вони до дискомфорту після перерви 10–12 годин?", hint: "Якщо переповнюються швидко — скорочувати потрібно дуже поступово, по одному годуванню на тиждень." },
+            // Блок Дитини
+            { block: 'Дитина', type: 'child', q: "Легкість відволікання: чи переключається дитина з вимоги грудей на цікаву гру чи справу?", hint: "Чи змінює вона траєкторію, якщо запропонувати щось захоплююче замість прикладання?" },
+            { block: 'Дитина', type: 'child', q: "Здатність заспокоюватися: чи може дитина прийняти обійми або пісеньку замість грудей, коли засмучена?", hint: "Чи працюють інші форми втіхи: погладжування, присутність поруч, тихий голос?" },
+            { block: 'Дитина', type: 'child', q: "Їжа чи прикладання: чи погоджується дитина на смачний перекус замість грудей через 2 години після їжі?", hint: "Важливо зрозуміти, чи це голод, чи потреба саме в контакті через прикладання." },
+            { block: 'Дитина', type: 'child', q: "Вміння чекати: чи може дитина спокійно зачекати 5 хвилин, поки ви закінчуєте справу?", hint: "Чи розуміє вона концепцію «зачекай», чи це викликає негайну істерику?" },
+            { block: 'Дитина', type: 'child', q: "Засинання без грудей: чи був успішний досвід відходу до сну через казку, погладжування чи пісеньку?", hint: "Чи вдавалося дитині заснути будь-яким іншим способом, окрім прикладання?" }
         ];
-        
-        let currentQ = 0;
+
+        let current = 0;
         let scores = [];
-        
-        function showQ() {
-            const q = questions[currentQ];
-            document.getElementById('qNum').innerText = `Питання ${currentQ + 1} з ${questions.length} • ${q.label}`;
+
+        function render() {
+            const q = questions[current];
+            document.getElementById('qTag').innerText = q.block + ' Блок';
+            document.getElementById('qTag').className = 'tag ' + (q.type === 'mama' ? 'tag-mama' : 'tag-child');
+            document.getElementById('qProgress').innerText = `Питання ${current + 1} з ${questions.length}`;
             document.getElementById('qText').innerText = q.q;
             document.getElementById('qHint').innerText = q.hint;
         }
-        
-        function nextQuestion(val) {
+
+        function next(val) {
             scores.push(val);
-            currentQ++;
-            if (currentQ < questions.length) {
-                showQ();
+            current++;
+            if (current < questions.length) {
+                render();
             } else {
                 showResult();
             }
         }
-        
+
         function showResult() {
-            document.getElementById('quiz').style.display = 'none';
-            document.getElementById('result').style.display = 'block';
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
             
             const total = scores.reduce((a, b) => a + b, 0);
-            const maxScore = questions.length * 5;
-            
-            document.getElementById('resScore').innerText = `${total} / ${maxScore}`;
-            
-            let res = "";
-            if (total >= 21) {
-                res = "Ви та малюк максимально готові! Можна починати м'яке завершення, прибираючи найменш важливі годування.";
-            } else if (total >= 13) {
-                res = "Ви на правильному шляху, але є моменти, які потребують підготовки. Зверніть увагу на пункти з низьким балом.";
-            } else {
-                res = "Схоже, зараз не найкращий час для різких змін. Спробуйте попрацювати над харчовим інтересом або розділенням сну та годування.";
-            }
-            document.getElementById('resText').innerText = res;
-            
-            let html = "<h3>Деталізація:</h3>";
+            document.getElementById('totalScore').innerText = `${total} / 50`;
+
+            let advice = "";
+            if (total >= 40) advice = "Ви та малюк максимально готові до м'якого завершення!";
+            else if (total >= 25) advice = "Ви на середині шляху. Можна починати готуватись і впроваджувати перші зміни.";
+            else advice = "Зараз краще зосередитись на підготовці ресурсу та нових ритуалах.";
+            document.getElementById('mainAdvice').innerText = advice;
+
+            let html = "";
             questions.forEach((q, i) => {
-                const filled = "★".repeat(scores[i]);
-                const empty = "☆".repeat(5 - scores[i]);
-                html += `<div class="score-row"><span>${q.label}</span><span>${filled}${empty}</span></div>`;
+                const s = scores[i];
+                const stars = '★'.repeat(s) + '☆'.repeat(5 - s);
+                html += `<div class="category-row">
+                    <div style="font-size:14px; max-width:60%">${q.q.split(':')[0]}</div>
+                    <div class="stars">${stars}</div>
+                </div>`;
             });
             document.getElementById('breakdown').innerHTML = html;
         }
-        
-        showQ();
+
+        render();
     </script>
 </body>
 </html>
